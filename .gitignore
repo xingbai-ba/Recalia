@@ -13,3 +13,6 @@ memory/*
 
 # 临时文件
 .tmp/
+
+# 测试/备份目录
+memory-backup-*/
