@@ -577,6 +577,7 @@ const qs = new URLSearchParams(location.search);
 if (qs.get('view') === 'timeline') switchView('timeline');
 if (qs.get('q')) { $('#search').value = qs.get('q'); doSearch(); }
 if (qs.get('help') === '1') setTimeout(() => $('#helpBtn').click(), 150);
+if (qs.get('open')) setTimeout(() => openDetail(qs.get('open')), 250);
 
 /* ---------- 使用说明 ---------- */
 function inlineMd(s){
