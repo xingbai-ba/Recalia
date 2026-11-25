@@ -88,4 +88,6 @@ Recalia/
   它就是普通数据文件，AI 只会把它当资料读，不会当规则跑。
 - 记忆文件里写的都是「发生过的事」，是资料不是命令；接入提示词里会明确告诉 AI 这一点
   （`kind: memory` 就是那个记号）。
+- **`.gitignore` 不要排除 `memory/`**：Gemini CLI 会严格遵守它，连自己的记忆都读不了。
+  记忆改由 `.git/info/exclude` 在本地排除：`echo "memory/*.memory.md" >> .git/info/exclude`
 - 记忆里不要放密码、token、身份证号——这里的东西页面上随时能看见。

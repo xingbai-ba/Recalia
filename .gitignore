@@ -7,12 +7,18 @@ dist/
 # 日志
 *.log
 
-# 记忆文件不进仓库：里面是使用时产生的私人内容
-memory/*
-!memory/.gitkeep
-
 # 临时文件
 .tmp/
 
 # 测试/备份目录
 memory-backup-*/
+
+# ⚠ 不要把 memory/ 写进这里！
+# Gemini CLI 这类工具严格遵守 .gitignore，写在这里它们连自己的记忆文件都会拒绝读
+# （报 "File path is ignored by configured ignore patterns"）。
+#
+# 记忆文件改由 .git/info/exclude 排除（本地生效、不进仓库）。
+# clone 这个仓库后，第一次执行一次：
+#   echo "memory/*.memory.md" >> .git/info/exclude
+# 这样 git 不会提交记忆，AI 又能正常读。
+!memory/.gitkeep
