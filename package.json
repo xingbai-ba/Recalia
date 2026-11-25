@@ -1,0 +1,16 @@
+{
+  "name": "recalia",
+  "version": "0.1.0",
+  "description": "所有 AI 共用的记忆海 — 每个 AI 往 memory/ 写自己的 Markdown，自动收成一张张卡片",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "keywords": [
+    "ai",
+    "memory",
+    "local-first",
+    "markdown"
+  ],
+  "license": "MIT"
+}

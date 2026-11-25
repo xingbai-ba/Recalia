@@ -1,0 +1,15 @@
+# 依赖
+node_modules/
+
+# 打包产物
+dist/
+
+# 日志
+*.log
+
+# 记忆文件不进仓库：里面是使用时产生的私人内容
+memory/*
+!memory/.gitkeep
+
+# 临时文件
+.tmp/

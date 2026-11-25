@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recalia · 多 AI 记忆海</title>
+<link rel="icon" type="image/png" sizes="512x512" href="/favicon.png">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/favicon-180.png">
+<style>
+  :root{
+    --bg:#0a0c13; --panel:#141826; --panel2:#1b2033; --line:#262c40;
+    --text:#e8ecf8; --muted:#8892ab; --accent:#7c5cff; --accent2:#4dd4ff;
+  }
+  *{box-sizing:border-box}
+  .hidden{display:none!important}
+  body{
+    margin:0; min-height:100vh; color:var(--text);
+    font:14px/1.6 "Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    background:
+      radial-gradient(900px 500px at 15% -10%, rgba(124,92,255,.22), transparent 60%),
+      radial-gradient(800px 500px at 95% 0%, rgba(77,212,255,.16), transparent 55%),
+      var(--bg);
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:38px 26px 80px}
+
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+  .logo{
+    width:46px;height:46px;border-radius:14px;flex:0 0 auto;
+    object-fit:cover;display:block;
+    box-shadow:0 0 0 1px rgba(160,200,255,.22), 0 8px 30px rgba(77,212,255,.28);
+  }
+  h1{font-size:26px;margin:0;letter-spacing:.5px}
+  h1 small{font-size:13px;color:var(--muted);font-weight:400;margin-left:10px}
+  .sub{color:var(--muted);font-size:13px;margin-top:6px}
+
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:24px 0 18px}
+  .tabs{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px}
+  .tab{
+    border:none;background:none;color:var(--muted);font-size:12.5px;
+    padding:6px 14px;border-radius:8px;cursor:pointer;transition:.15s;
+  }
+  .tab.on{background:var(--panel2);color:var(--text);font-weight:600}
+  .search-wrap{position:relative;flex:0 1 300px;min-width:180px}
+  .search-wrap input{
+    width:100%;padding:9px 30px 9px 12px;border-radius:10px;
+    border:1px solid var(--line);background:var(--panel);color:var(--text);
+    font-size:13px;outline:none;transition:.15s;
+  }
+  .search-wrap input:focus{border-color:var(--accent)}
+  .search-wrap .clear{
+    position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:7px;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;
+    padding:7px 14px;font-size:12.5px;color:var(--muted);
+  }
+  .chip b{color:var(--text);font-weight:600}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent2);box-shadow:0 0 10px rgba(77,212,255,.7)}
+  .btn{
+    border:none;cursor:pointer;border-radius:12px;padding:10px 18px;
+    font-size:13px;font-weight:600;color:#fff;
+    background:linear-gradient(135deg,#7c5cff,#5b8cff);
+    box-shadow:0 8px 24px rgba(124,92,255,.35);transition:.16s;
+  }
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.08)}
+  .btn.ghost{background:var(--panel2);border:1px solid var(--line);box-shadow:none;color:var(--text)}
+  .btn.danger{background:#44202a;border:1px solid #5c2630;color:#ff9d9d;box-shadow:none}
+  #helpBtn{margin-left:auto}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .card{
+    position:relative;overflow:hidden;cursor:pointer;
+    background:linear-gradient(180deg,rgba(27,32,51,.92),rgba(20,24,38,.92));
+    border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px;
+    transition:.18s;
+  }
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c);box-shadow:0 0 18px var(--c)}
+  .card:hover{transform:translateY(-2px);border-color:#39415c;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+  .card .top{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .avatar{
+    width:36px;height:36px;border-radius:11px;flex:0 0 auto;
+    display:grid;place-items:center;font-size:15px;font-weight:700;color:#0a0c13;
+    background:var(--c);
+  }
+  .card .name{font-size:16px;font-weight:700;letter-spacing:.2px}
+  .card .model{font-size:11.5px;color:var(--muted);margin-top:2px}
+  .meta{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:12px}
+  .meta b{color:var(--text);font-weight:600}
+  .empty{
+    text-align:center;color:var(--muted);
+    border:1px dashed var(--line);border-radius:16px;padding:52px 20px;font-size:13.5px;
+  }
+  .empty b{color:var(--text)}
+
+  /* 时间线 */
+  .tl-day{margin-bottom:18px}
+  .tl-date{
+    font-size:12px;color:var(--accent2);font-weight:700;letter-spacing:.08em;
+    margin:0 0 8px;padding-left:2px;
+  }
+  .tl-items{border-left:2px solid var(--line);margin-left:3px;padding-left:16px}
+  .tl-item{
+    display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:10px;
+    cursor:pointer;transition:.15s;
+  }
+  .tl-item:hover{background:var(--panel)}
+  .tag{
+    flex:0 0 auto;font-size:11px;font-weight:700;color:#0a0c13;
+    background:var(--c);border-radius:6px;padding:2px 8px;margin-top:1px;
+  }
+  .tl-item span:last-child{color:#cfd6ea;font-size:13.5px}
+
+  /* 搜索结果 */
+  .sr-item{
+    padding:12px 14px;border:1px solid var(--line);border-radius:12px;
+    background:var(--panel);margin-bottom:10px;cursor:pointer;transition:.15s;
+  }
+  .sr-item:hover{border-color:#3a4566;transform:translateX(2px)}
+  .sr-head{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .sr-head b{color:var(--text)}
+  .sr-text{color:#cfd6ea;font-size:13.5px}
+  mark{background:rgba(124,92,255,.35);color:#fff;border-radius:3px;padding:0 2px}
+
+  /* 详情抽屉 */
+  .drawer{
+    position:fixed;top:0;right:0;bottom:0;width:min(600px,94vw);
+    background:var(--panel);border-left:1px solid var(--line);
+    transform:translateX(102%);transition:transform .22s ease;z-index:20;
+    display:flex;flex-direction:column;box-shadow:-24px 0 60px rgba(0,0,0,.5);
+  }
+  .drawer.open{transform:none}
+  .drawer .head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .drawer .head .name{font-size:17px;font-weight:700}
+  .drawer .head .model{font-size:12px;color:var(--muted)}
+  .head-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .mini{
+    background:var(--panel2);border:1px solid var(--line);color:var(--text);
+    border-radius:9px;padding:6px 12px;font-size:12px;cursor:pointer;
+  }
+  .mini:hover{border-color:#3a4566}
+  .mini.danger{color:#ff9d9d;border-color:#5c2630;background:#37202a}
+  .close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1}
+  .drawer .body{overflow:auto;padding:18px 20px 40px;flex:1}
+  .sec{font-size:12px;color:var(--accent2);letter-spacing:.12em;margin:20px 0 8px;font-weight:700}
+  .li{position:relative;padding-left:16px;margin:5px 0;color:#cfd6ea;font-size:13.5px}
+  .li::before{content:"";position:absolute;left:4px;top:9px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+  .para{color:#aeb8d2;font-size:13.5px;margin:6px 0}
+  #dText{
+    width:100%;height:calc(100vh - 260px);min-height:300px;padding:14px;border-radius:12px;
+    border:1px solid var(--line);background:#0e1220;color:#cdd6ea;
+    font:12.5px/1.7 Consolas,monospace;resize:vertical;outline:none;
+  }
+  .edit-actions{display:flex;gap:10px;margin-top:12px}
+  .edit-hint{color:var(--muted);font-size:11.5px;margin:0 0 8px;line-height:1.6}
+
+  /* 弹窗 */
+  .mask{
+    position:fixed;inset:0;background:rgba(4,6,12,.72);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:30;padding:20px;
+  }
+  .mask.open{display:flex}
+  .modal{
+    width:min(680px,96vw);background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.6);
+  }
+  .modal h2{margin:0 0 6px;font-size:18px}
+  .modal .hint{color:var(--muted);font-size:12.5px;margin-bottom:14px;line-height:1.7}
+  .modal input{
+    width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
+    background:var(--panel2);color:var(--text);font-size:14px;outline:none;
+  }
+  .modal input:focus{border-color:var(--accent)}
+  .modal textarea{
+    width:100%;height:270px;margin-top:12px;padding:12px;border-radius:12px;
+    border:1px solid var(--line);background:#0e1220;color:#cdd6ea;
+    font:12.5px/1.65 Consolas,monospace;resize:vertical;outline:none;
+  }
+  .row{display:flex;gap:10px;margin-top:14px}
+  .toast{
+    position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(14px);
+    background:#1d2740;color:#cfe0ff;padding:10px 20px;border-radius:11px;
+    border:1px solid #2f4066;font-size:13px;opacity:0;transition:.22s;pointer-events:none;z-index:40;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%)}
+
+  /* 使用说明 */
+  .help-modal{width:min(780px,96vw);max-height:88vh;display:flex;flex-direction:column}
+  .help-body{overflow:auto;padding-right:8px;font-size:13.5px;line-height:1.78;color:#cfd6ea}
+  .help-body h1{font-size:20px;margin:4px 0 12px;color:var(--text)}
+  .help-body h2{font-size:16px;margin:22px 0 8px;color:var(--text);border-bottom:1px solid var(--line);padding-bottom:6px}
+  .help-body h3{font-size:14px;margin:14px 0 6px;color:var(--text)}
+  .help-body p{margin:6px 0;color:#aeb8d2}
+  .help-body ul{margin:6px 0;padding-left:20px}
+  .help-body li{margin:4px 0}
+  .help-body code{background:#0e1220;border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px;color:#8fd3ff}
+  .help-body pre{background:#0e1220;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;font-size:12px;line-height:1.6}
+  .help-body pre code{background:none;border:none;padding:0}
+  .help-body blockquote{border-left:3px solid var(--accent);margin:8px 0;padding:4px 12px;color:var(--muted)}
+  .help-body hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="/favicon.png" alt="Recalia">
+    <div>
+      <h1>Recalia <small>多 AI 记忆海</small></h1>
+      <div class="sub">哪个 AI 往 <code>memory/</code> 里写，这里就多一张卡</div>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="tabs">
+      <button class="tab on" data-view="cards">卡片</button>
+      <button class="tab" data-view="timeline">时间线</button>
+    </div>
+    <div class="search-wrap">
+      <input id="search" placeholder="搜索所有 AI 的记忆…" autocomplete="off">
+      <button class="clear hidden" id="searchClear">×</button>
+    </div>
+    <span class="chip"><span class="dot"></span>已接入 <b id="count">0</b> 个</span>
+    <button class="mini" id="helpBtn">📖 使用说明</button>
+    <button class="btn" id="addBtn">+ 接入新 AI</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div id="timeline" class="hidden"></div>
+  <div id="searchResults" class="hidden"></div>
+</div>
+
+<!-- 详情 -->
+<div class="drawer" id="drawer">
+  <div class="head">
+    <div class="avatar" id="dAvatar">?</div>
+    <div>
+      <div class="name" id="dName">—</div>
+      <div class="model" id="dModel"></div>
+    </div>
+    <div class="head-actions">
+      <button class="mini" id="editBtn">编辑</button>
+      <button class="mini danger" id="delBtn">删除</button>
+      <button class="close" id="dClose">×</button>
+    </div>
+  </div>
+  <div class="body">
+    <div id="dView"></div>
+    <div id="dEdit" class="hidden">
+      <p class="edit-hint">直接改原文。注意别删掉开头 <code>---</code> 包起来的 frontmatter，删了卡片名会退回文件名。</p>
+      <textarea id="dText" spellcheck="false"></textarea>
+      <div class="edit-actions">
+        <button class="btn" id="saveBtn">保存</button>
+        <button class="btn ghost" id="cancelBtn">取消</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 接入提示词 -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <h2>接入新 AI</h2>
+    <div class="hint">
+      输入这个 AI 的模型名（比如 claude、gemini、gpt-4o），
+      然后把下面的提示词整段发给它，它就会自己来写记忆。
+    </div>
+    <input id="aiName" placeholder="例如 claude-sonnet-4-5" autocomplete="off">
+    <textarea id="promptBox" readonly placeholder="输入名字后这里会生成提示词"></textarea>
+    <div class="row">
+      <button class="btn" id="copyBtn">复制提示词</button>
+      <button class="btn ghost" id="maskClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 使用说明 -->
+<div class="mask" id="helpMask">
+  <div class="modal help-modal">
+    <h2>使用说明</h2>
+    <div class="help-body" id="helpBody">加载中…</div>
+    <div class="row">
+      <button class="btn ghost" id="helpClose">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = ['#7c5cff','#4dd4ff','#3ddc97','#ff9f6b','#ff6b9d','#ffd166','#9b8cff','#5ad1ff','#6ee7b7','#f472b6'];
+const $ = (s) => document.querySelector(s);
+
+function colorOf(name){
+  let h = 0;
+  for (const ch of String(name)) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  return COLORS[h % COLORS.length];
+}
+function esc(s){
+  return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function ago(ms){
+  const d = Date.now() - ms;
+  const m = Math.floor(d / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return m + ' 分钟前';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + ' 小时前';
+  return Math.floor(h / 24) + ' 天前';
+}
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 1900);
+}
+function initialOf(name){
+  const m = String(name).match(/[a-zA-Z0-9]/);
+  return (m ? m[0] : (String(name)[0] || '?')).toUpperCase();
+}
+
+let view = 'cards';
+let lastJson = '';
+let curFile = '';
+let editing = false;
+
+async function load(){
+  try {
+    const r = await fetch('/api/ais', { cache: 'no-store' });
+    const data = await r.json();
+    const json = JSON.stringify(data.ais);
+    if (json !== lastJson) {
+      lastJson = json;
+      renderCards(data);
+    }
+    $('#count').textContent = data.count;
+  } catch { /* 服务没起 */ }
+}
+
+function renderCards(data){
+  const grid = $('#grid');
+  if (!data.ais.length){
+    grid.innerHTML = '<div class="empty">还没有 AI 接入。<br>点右上角 <b>+ 接入新 AI</b>，把提示词发给任意一个 AI 就行。</div>';
+    return;
+  }
+  grid.innerHTML = data.ais.map((a) => {
+    const c = colorOf(a.name);
+    return `<div class="card" style="--c:${c}" data-file="${esc(a.file)}">
+      <div class="top">
+        <div class="avatar" style="--c:${c}">${esc(initialOf(a.name))}</div>
+        <div>
+          <div class="name">${esc(a.name)}</div>
+          <div class="model">${esc(a.model || '未标模型')}</div>
+        </div>
+      </div>
+      <div class="meta"><span><b>${a.entries}</b> 条记忆</span><span>${esc(ago(a.updated))}</span></div>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.card').forEach((el) => {
+    el.onclick = () => openDetail(el.dataset.file);
+  });
+}
+
+/* ---------- 详情 / 编辑 / 删除 ---------- */
+async function openDetail(file){
+  curFile = file;
+  editing = false;
+  const r = await fetch('/api/ai/' + encodeURIComponent(file), { cache: 'no-store' });
+  if (!r.ok) return toast('读取失败');
+  const a = await r.json();
+  $('#dAvatar').textContent = initialOf(a.name);
+  $('#dAvatar').style.background = colorOf(a.name);
+  $('#dName').textContent = a.name;
+  $('#dModel').textContent = [a.model, a.joined ? '接入于 ' + a.joined : ''].filter(Boolean).join(' · ');
+  $('#dView').innerHTML = renderBody(a.body);
+  $('#dText').value = a.raw || a.body;
+  $('#dView').classList.remove('hidden');
+  $('#dEdit').classList.add('hidden');
+  $('#editBtn').classList.remove('hidden');
+  $('#editBtn').textContent = '编辑';
+  $('#drawer').classList.add('open');
+}
+
+function renderBody(text){
+  const out = [];
+  for (const raw of String(text || '').split(/\r?\n/)){
+    const line = raw.trim();
+    if (!line) continue;
+    if (/^##\s+/.test(line)) out.push('<div class="sec">' + esc(line.replace(/^##\s+/, '')) + '</div>');
+    else if (/^[-*]\s+/.test(line)) out.push('<div class="li">' + esc(line.replace(/^[-*]\s+/, '')) + '</div>');
+    else out.push('<div class="para">' + esc(line) + '</div>');
+  }
+  return out.join('') || '<div class="para">（这份文件还没有内容）</div>';
+}
+
+$('#editBtn').onclick = async () => {
+  if (!curFile) return;
+  editing = !editing;
+  if (editing){
+    $('#dView').classList.add('hidden');
+    $('#dEdit').classList.remove('hidden');
+    $('#editBtn').textContent = '取消';
+    $('#dText').focus();
+  } else {
+    $('#dView').classList.remove('hidden');
+    $('#dEdit').classList.add('hidden');
+    $('#editBtn').textContent = '编辑';
+  }
+};
+$('#cancelBtn').onclick = () => {
+  editing = false;
+  $('#dView').classList.remove('hidden');
+  $('#dEdit').classList.add('hidden');
+  $('#editBtn').textContent = '编辑';
+};
+$('#saveBtn').onclick = async () => {
+  if (!curFile) return;
+  const text = $('#dText').value;
+  const r = await fetch('/api/ai/' + encodeURIComponent(curFile), {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ text }),
+  });
+  if (r.ok){
+    toast('已保存');
+    lastJson = '';
+    await load();
+    openDetail(curFile);
+  } else {
+    toast('保存失败');
+  }
+};
+$('#delBtn').onclick = async () => {
+  if (!curFile) return;
+  if (!confirm('删掉 ' + curFile + ' 这份记忆？\n文件会直接从 memory 文件夹删除，不进回收站。')) return;
+  const r = await fetch('/api/ai/' + encodeURIComponent(curFile), { method: 'DELETE' });
+  if (r.ok){
+    toast('已删除，这个 AI 退出记忆海');
+    curFile = '';
+    $('#drawer').classList.remove('open');
+    lastJson = '';
+    await load();
+  } else {
+    toast('删除失败');
+  }
+};
+$('#dClose').onclick = () => { $('#drawer').classList.remove('open'); curFile = ''; };
+
+/* ---------- 时间线 ---------- */
+async function loadTimeline(){
+  const r = await fetch('/api/timeline', { cache: 'no-store' });
+  const d = await r.json();
+  if (!d.items.length){
+    $('#timeline').innerHTML = '<div class="empty">还没有任何记忆。<b>+ 接入新 AI</b> 开始。</div>';
+    return;
+  }
+  const groups = new Map();
+  for (const it of d.items){
+    if (!groups.has(it.date)) groups.set(it.date, []);
+    groups.get(it.date).push(it);
+  }
+  let html = '';
+  for (const [date, items] of groups){
+    html += `<div class="tl-day"><div class="tl-date">${esc(date)}</div><div class="tl-items">`;
+    for (const it of items){
+      html += `<div class="tl-item" data-file="${esc(it.file)}">
+        <span class="tag" style="--c:${colorOf(it.name)}">${esc(it.name)}</span>
+        <span>${esc(it.text)}</span>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  $('#timeline').innerHTML = html;
+  $('#timeline').querySelectorAll('.tl-item').forEach((el) => {
+    el.onclick = () => openDetail(el.dataset.file);
+  });
+}
+
+/* ---------- 视图切换 ---------- */
+function switchView(v){
+  view = v;
+  document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
+  $('#search').value = '';
+  $('#searchClear').classList.add('hidden');
+  $('#searchResults').classList.add('hidden');
+  $('#grid').classList.toggle('hidden', v !== 'cards');
+  $('#timeline').classList.toggle('hidden', v !== 'timeline');
+  if (v === 'timeline') loadTimeline();
+}
+document.querySelectorAll('.tab').forEach((b) => { b.onclick = () => switchView(b.dataset.view); });
+
+/* ---------- 搜索 ---------- */
+let searchTimer = null;
+function highlight(text, q){
+  const safe = esc(text);
+  if (!q) return safe;
+  const needle = esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return safe.replace(new RegExp(needle, 'gi'), (m) => '<mark>' + m + '</mark>');
+}
+async function doSearch(){
+  const q = $('#search').value.trim();
+  if (!q){
+    $('#searchResults').classList.add('hidden');
+    $('#grid').classList.toggle('hidden', view !== 'cards');
+    $('#timeline').classList.toggle('hidden', view !== 'timeline');
+    return;
+  }
+  $('#searchClear').classList.remove('hidden');
+  const r = await fetch('/api/search?q=' + encodeURIComponent(q), { cache: 'no-store' });
+  const d = await r.json();
+  const box = $('#searchResults');
+  box.classList.remove('hidden');
+  $('#grid').classList.add('hidden');
+  $('#timeline').classList.add('hidden');
+  if (!d.hits.length){
+    box.innerHTML = '<div class="empty">没有搜到「' + esc(q) + '」。</div>';
+    return;
+  }
+  box.innerHTML = '<div class="sr-head" style="color:var(--muted);font-size:12px;margin-bottom:10px">共 ' + d.hits.length + ' 条匹配</div>'
+    + d.hits.map((h) => `<div class="sr-item" data-file="${esc(h.file)}">
+        <div class="sr-head">
+          <span class="tag" style="--c:${colorOf(h.name)}">${esc(h.name)}</span>
+          <b>${esc(h.name)}</b>${h.section ? ' · ' + esc(h.section) : ''}
+        </div>
+        <div class="sr-text">${highlight(h.text, q)}</div>
+      </div>`).join('');
+  box.querySelectorAll('.sr-item').forEach((el) => {
+    el.onclick = () => openDetail(el.dataset.file);
+  });
+}
+$('#search').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(doSearch, 250);
+});
+$('#searchClear').onclick = () => {
+  $('#search').value = '';
+  $('#searchClear').classList.add('hidden');
+  doSearch();
+};
+
+/* ---------- 接入弹窗 ---------- */
+$('#addBtn').onclick = () => {
+  $('#mask').classList.add('open');
+  $('#aiName').value = '';
+  $('#promptBox').value = '';
+  $('#aiName').focus();
+};
+$('#maskClose').onclick = () => $('#mask').classList.remove('open');
+$('#mask').onclick = (e) => { if (e.target === $('#mask')) $('#mask').classList.remove('open'); };
+
+let guideCache = '';
+$('#aiName').addEventListener('input', async () => {
+  const name = $('#aiName').value.trim();
+  if (!name){ $('#promptBox').value = ''; guideCache = ''; return; }
+  const r = await fetch('/api/guide?name=' + encodeURIComponent(name), { cache: 'no-store' });
+  const g = await r.json();
+  guideCache = g.prompt;
+  $('#promptBox').value = g.prompt;
+});
+
+$('#copyBtn').onclick = async () => {
+  if (!guideCache) return toast('先输入模型名');
+  try {
+    await navigator.clipboard.writeText(guideCache);
+    toast('提示词已复制，发给那个 AI 就行');
+  } catch {
+    $('#promptBox').select();
+    document.execCommand('copy');
+    toast('已复制');
+  }
+};
+
+// 支持 ?q=关键词 直接搜索、?view=timeline 直接看时间线（方便分享链接）
+const qs = new URLSearchParams(location.search);
+if (qs.get('view') === 'timeline') switchView('timeline');
+if (qs.get('q')) { $('#search').value = qs.get('q'); doSearch(); }
+if (qs.get('help') === '1') setTimeout(() => $('#helpBtn').click(), 150);
+
+/* ---------- 使用说明 ---------- */
+function inlineMd(s){
+  let t = esc(s);
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  return t;
+}
+function renderMd(text){
+  const out = [];
+  let inCode = false, code = [], inList = false;
+  const closeList = () => { if (inList){ out.push('</ul>'); inList = false; } };
+  for (const raw of String(text).split(/\r?\n/)){
+    if (/^```/.test(raw)){
+      if (inCode){ out.push('<pre><code>' + esc(code.join('\n')) + '</code></pre>'); code = []; inCode = false; }
+      else { inCode = true; closeList(); }
+      continue;
+    }
+    if (inCode){ code.push(raw); continue; }
+    if (/^\s*$/.test(raw)){ closeList(); continue; }
+    if (/^-{3,}\s*$/.test(raw)){ closeList(); out.push('<hr>'); continue; }
+    if (/^###\s+/.test(raw)){ closeList(); out.push('<h3>' + inlineMd(raw.replace(/^###\s+/, '')) + '</h3>'); }
+    else if (/^##\s+/.test(raw)){ closeList(); out.push('<h2>' + inlineMd(raw.replace(/^##\s+/, '')) + '</h2>'); }
+    else if (/^#\s+/.test(raw)){ closeList(); out.push('<h1>' + inlineMd(raw.replace(/^#\s+/, '')) + '</h1>'); }
+    else if (/^>\s?/.test(raw)){ closeList(); out.push('<blockquote>' + inlineMd(raw.replace(/^>\s?/, '')) + '</blockquote>'); }
+    else if (/^[-*]\s+/.test(raw)){ if (!inList){ out.push('<ul>'); inList = true; } out.push('<li>' + inlineMd(raw.replace(/^[-*]\s+/, '')) + '</li>'); }
+    else { closeList(); out.push('<p>' + inlineMd(raw) + '</p>'); }
+  }
+  if (inList) out.push('</ul>');
+  if (inCode) out.push('<pre><code>' + esc(code.join('\n')) + '</code></pre>');
+  return out.join('');
+}
+
+$('#helpBtn').onclick = async () => {
+  $('#helpMask').classList.add('open');
+  try {
+    const r = await fetch('/api/guide-md', { cache: 'no-store' });
+    const d = await r.json();
+    $('#helpBody').innerHTML = renderMd(d.text || '');
+  } catch {
+    $('#helpBody').textContent = '读取失败：memory/_guide.md 找不到。';
+  }
+};
+$('#helpClose').onclick = () => $('#helpMask').classList.remove('open');
+$('#helpMask').onclick = (e) => { if (e.target === $('#helpMask')) $('#helpMask').classList.remove('open'); };
+
+load();
+setInterval(load, 2000);
+</script>
+</body>
+</html>
